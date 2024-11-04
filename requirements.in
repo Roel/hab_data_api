@@ -1,0 +1,8 @@
+quart
+quart-auth
+apscheduler
+aiosqlite
+hypercorn
+influxdb
+httpx
+pandas

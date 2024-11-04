@@ -1,0 +1,15 @@
+[Unit]
+Description = HAB data API
+After = network-online.target
+Wants = network-online.target
+
+[Service]
+User = pi
+Group = pi
+Type = simple
+ExecStart = /opt/hab_data_api/hab_data_api.sh
+Restart = always
+RestartSec = 10
+
+[Install]
+WantedBy = multi-user.target
