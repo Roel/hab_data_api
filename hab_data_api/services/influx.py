@@ -139,12 +139,15 @@ class InfluxService:
         results = sorted(results, key=lambda x: x['time'])
 
         if len(results) > 0:
+            current_timestamp = results[-1]['time']
             current_production = results[-1]['value']
         else:
+            current_timestamp = datetime.datetime.now(
+                tz=pytz.timezone('Europe/Brussels'))
             current_production = 0
 
         return TimeDataDto(
-            timestamp=results[-1]['time'],
+            timestamp=current_timestamp,
             value=current_production,
             unit='W'
         )
