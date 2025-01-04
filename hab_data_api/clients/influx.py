@@ -18,5 +18,6 @@ from influxdb import InfluxDBClient
 
 
 class InfluxClient(InfluxDBClient):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app, *args, **kwargs):
+        self.app = app
         super().__init__(*args, **kwargs)

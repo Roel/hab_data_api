@@ -6,3 +6,4 @@ hypercorn
 influxdb
 httpx
 pandas
+python-dateutil

@@ -14,80 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from dataclasses import dataclass
 import datetime
+from dateutil.relativedelta import relativedelta
 
 import pandas as pd
 
 import pytz
-from clients.influx import InfluxClient
 
-
-@dataclass
-class TimeDataDto:
-    timestamp: datetime.datetime
-    value: float
-    unit: str
-
-
-@dataclass
-class TimePeriodStatsDto:
-    start: datetime.datetime
-    end: datetime.datetime
-    unit: str
-    q25: float
-    q50: float
-    q75: float
-    stddev: float
-
-
-@dataclass
-class HeatPumpStatusDto:
-    operating_mode: str
-    heat_source: str
-    defrost_status: str
-
-
-@dataclass
-class HeatPumpSetpointDto:
-    dhw: float
-    heating: float
-
+from dto.generic import TimeDataDto, TimePeriodStatsDto
+from dto.heatpump import HeatPumpStatusDto, HeatPumpSetpointDto
+from services.cache import cache_for
 
 def to_brussels_time(datetime_utc):
     return datetime_utc.replace(tzinfo=pytz.utc).astimezone(
         pytz.timezone('Europe/Brussels'))
 
 
-CACHE = {}
-
-
-def cache_for(seconds):
-    def cache(fn):
-        def wrapper(*args, **kwargs):
-            timestamp, cache = CACHE.get(fn.__name__, (None, None))
-
-            if timestamp is not None and cache is not None \
-                    and timestamp >= datetime.datetime.now() - datetime.timedelta(seconds=seconds):
-                return cache
-
-            result = fn(*args, *kwargs)
-            CACHE[fn.__name__] = (datetime.datetime.now(), result)
-            return result
-        return wrapper
-    return cache
-
 
 class InfluxService:
     def __init__(self, app):
         self.app = app
-
-        self.client = InfluxClient(
-            host=self.app.config['INFLUX_HOST'],
-            database=self.app.config['INFLUX_DATABASE'],
-            username=self.app.config['INFLUX_USERNAME'],
-            password=self.app.config['INFLUX_PASSWORD']
-        )
+        self.client = self.app.clients.influx
 
     def get_current_power_fromgrid(self):
         current_power_net = self.get_current_power_net()
@@ -97,6 +44,29 @@ class InfluxService:
             value=max(0, current_power_net.value),
             unit='W'
         )
+
+    @cache_for(seconds=5)
+    def get_last_grid_price(self):
+        rs = self.client.query(
+            "select * from persist.belpex_grid_prices order by time desc limit 1"
+        )
+
+        results = []
+        for r in rs.get_points():
+            r['time'] = to_brussels_time(
+                datetime.datetime.strptime(r['time'], '%Y-%m-%dT%H:%M:%SZ'))
+            results.append(r)
+
+        if len(results) == 0:
+            return None
+        else:
+            result = results[0]
+
+            return TimeDataDto(
+                timestamp=result['time'],
+                value=result['value'],
+                unit='c€/kWh'
+            )
 
     @cache_for(seconds=5)
     def get_current_power_net(self):
@@ -447,3 +417,179 @@ class InfluxService:
             value=dhw_temp,
             unit='° C'
         )
+
+    @cache_for(seconds=14400)
+    def get_current_month_peak(self):
+        today = datetime.date.today()
+        start_date = datetime.date(today.year, today.month, 1)
+        end_date = start_date + relativedelta(months=1)
+
+        rs_peak = self.client.query(
+            f"""
+                select max(peak) as peak from (
+                    select sum(peak) as peak from (
+                        SELECT difference(last(value)) *4 as peak, first(month) as month, first(year) as year
+                        from "persist".p1_elec_total_fromgrid_max
+                        where time >= '{start_date.strftime('%Y-%m-%d')}'
+                        and time < '{end_date.strftime('%Y-%m-%d')}' - 15m
+                        group by rate, month, year, time(15m) tz('Europe/Brussels')
+                    ) group by month, year, time(15m) tz('Europe/Brussels')
+                ) group by month, year
+            """
+        )
+
+        result_sum = 0
+        result_count = 0
+        for r in rs_peak.get_points():
+            r['time'] = to_brussels_time(
+                datetime.datetime.strptime(r['time'], '%Y-%m-%dT%H:%M:%SZ'))
+            result_sum += max(r['peak'], 2.5)
+            result_count += 1
+
+        return result_sum/result_count
+
+    @cache_for(seconds=14400)
+    def get_invoice_peak(self, year, month):
+        month_start = datetime.date(year, month, 1)
+        period_start = month_start - relativedelta(months=11)
+        period_end = month_start + relativedelta(months=1)
+
+        rs_peak = self.client.query(
+            f"""
+                select max(peak) as peak from (
+                    select sum(peak) as peak from (
+                        SELECT difference(last(value)) *4 as peak, first(month) as month, first(year) as year
+                        from "persist".p1_elec_total_fromgrid_max
+                        where time >= '{period_start.strftime('%Y-%m-%d')}'
+                        and time < '{period_end.strftime('%Y-%m-%d')}' - 15m
+                        group by rate, month, year, time(15m) tz('Europe/Brussels')
+                    ) group by month, year, time(15m) tz('Europe/Brussels')
+                ) group by month, year
+            """
+        )
+
+        result_sum = 0
+        result_count = 0
+        for r in rs_peak.get_points():
+            r['time'] = to_brussels_time(
+                datetime.datetime.strptime(r['time'], '%Y-%m-%dT%H:%M:%SZ'))
+            result_sum += max(r['peak'], 2.5)
+            result_count += 1
+
+        return result_sum/result_count
+
+    @cache_for(seconds=14400)
+    def get_monthly_belpex(self, year, month):
+        rs_belpex = self.client.query(
+            f"""
+                select mean(value) as belpex from
+                "persist".belpex_grid_prices
+                where "year" = '{year}' and "month"='{month}'
+            """
+        )
+
+        results = []
+        for r in rs_belpex.get_points():
+            results.append(r)
+
+        if len(results) == 0:
+            return None
+        else:
+            return results[0]['belpex']
+
+    @cache_for(seconds=300)
+    def get_hourly_energy_consumption_injection(self, start_date, end_date):
+        rs_consumption = self.client.query(
+            f"""
+                select difference(last(value)) as consumption
+                from persist.p1_elec_total_fromgrid
+                where time >= '{start_date.strftime('%Y-%m-%d')}'
+                and time < '{end_date.strftime('%Y-%m-%d')}'
+                group by rate, time(1h)
+                tz('Europe/Brussels')
+            """
+        )
+
+        result = []
+        for r in rs_consumption.get_points(tags={'rate': 'rate1'}):
+            r['time'] = to_brussels_time(
+                datetime.datetime.strptime(r['time'], '%Y-%m-%dT%H:%M:%SZ'))
+            result.append(r)
+
+        if len(result) > 0:
+            df = pd.DataFrame(result)
+            df = df.set_index('time')
+            df = df.rename(columns={'consumption': 'consumption_rate1'})
+        else:
+            df = None
+
+        result = []
+        for r in rs_consumption.get_points(tags={'rate': 'rate2'}):
+            r['time'] = to_brussels_time(
+                datetime.datetime.strptime(r['time'], '%Y-%m-%dT%H:%M:%SZ'))
+            result.append(r)
+
+        if len(result) > 0:
+            df_temp = pd.DataFrame(result).set_index('time').rename(
+                columns={'consumption': 'consumption_rate2'})
+        else:
+            df_temp = None
+
+        if df is None or df_temp is None:
+            df = df or df_temp
+        else:
+            df = pd.merge(df, df_temp, left_index=True, right_index=True)
+
+        rs_injection = self.client.query(
+            f"""
+                select difference(last(value)) as injection
+                from persist.p1_elec_total_togrid
+                where time >= '{start_date.strftime('%Y-%m-%d')}'
+                and time < '{end_date.strftime('%Y-%m-%d')}'
+                group by rate, time(1h)
+                tz('Europe/Brussels')
+            """
+        )
+
+        result = []
+        for r in rs_injection.get_points(tags={'rate': 'rate1'}):
+            r['time'] = to_brussels_time(
+                datetime.datetime.strptime(r['time'], '%Y-%m-%dT%H:%M:%SZ'))
+            result.append(r)
+
+        if len(result) > 0:
+            df_temp = pd.DataFrame(result).set_index('time').rename(
+                columns={'injection': 'injection_rate1'})
+            df = pd.merge(df, df_temp, left_index=True, right_index=True)
+
+        result = []
+        for r in rs_injection.get_points(tags={'rate': 'rate2'}):
+            r['time'] = to_brussels_time(
+                datetime.datetime.strptime(r['time'], '%Y-%m-%dT%H:%M:%SZ'))
+            result.append(r)
+
+        if len(result) > 0:
+            df_temp = pd.DataFrame(result).set_index('time').rename(
+                columns={'injection': 'injection_rate2'})
+            df = pd.merge(df, df_temp, left_index=True, right_index=True)
+
+        return df
+
+    def save_grid_prices(self, grid_data):
+        data = []
+
+        for d in grid_data:
+            data.append({
+                'time': int(d.timestamp.timestamp()) * 10**9,
+                'measurement': 'belpex_grid_prices',
+                'fields': {
+                    'value': d.value * 1.0
+                },
+                'tags': {
+                    'unit': d.unit,
+                    'month': d.timestamp.month,
+                    'year': d.timestamp.year
+                }
+            })
+
+        self.client.write_points(data, retention_policy="persist")

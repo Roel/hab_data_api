@@ -15,8 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import httpx
-
+import logging
 
 from quart import Quart
 from quart_auth import QuartAuth
@@ -26,17 +25,70 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import Config
 from db.base import Database
 
+from clients.influx import InfluxClient
+from clients.griddata import GridDataClient
+
+from services.cache import CacheService
 from services.influx import InfluxService
+from services.belpex import BelpexService
+from services.price import PriceService
 
 from blueprints.api import api
 from blueprints.grafana import grafana
+
+
+class Clients:
+    def __init__(self, app):
+        self.app = app
+
+        self.influx = InfluxClient(
+            self.app,
+            host=self.app.config['INFLUX_HOST'],
+            database=self.app.config['INFLUX_DATABASE'],
+            username=self.app.config['INFLUX_USERNAME'],
+            password=self.app.config['INFLUX_PASSWORD'])
+
+        self.griddata = GridDataClient(self.app)
+
+    async def shutdown(self):
+        await asyncio.gather(
+            self.griddata.shutdown()
+        )
 
 
 class Services:
     def __init__(self, app):
         self.app = app
 
+        self.cache = CacheService(self.app)
         self.influx = InfluxService(self.app)
+        self.belpex = BelpexService(self.app)
+        self.price = PriceService(self.app)
+
+
+class Logger:
+    def __init__(self, app):
+        self.app = app
+        self.logger = logging.getLogger('hab_data_api')
+        hdlr = logging.StreamHandler()
+        hdlr.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+        self.logger.addHandler(hdlr)
+        self.logger.setLevel(logging.DEBUG)
+
+    def log(self, *args, **kwargs):
+        return self.logger.log(*args, **kwargs)
+
+    def debug(self, message):
+        return self.log(logging.DEBUG, message)
+
+    def info(self, message):
+        return self.log(logging.INFO, message)
+
+    def warning(self, message):
+        return self.log(logging.WARNING, message)
+
+    def error(self, message):
+        return self.log(logging.ERROR, message)
 
 
 app = Quart(__name__)
@@ -45,6 +97,7 @@ app.secret_key = app.config['SECRET_KEY']
 
 app.db = Database(app)
 app.auth = QuartAuth(app)
+app.log = Logger(app)
 
 
 @app.before_serving
@@ -56,8 +109,7 @@ async def startup():
     app.scheduler = AsyncIOScheduler(event_loop=loop)
     app.scheduler.start()
 
-    app.httpx = httpx.AsyncClient()
-
+    app.clients = Clients(app)
     app.services = Services(app)
 
     app.register_blueprint(api, url_prefix='/api')
@@ -67,4 +119,5 @@ async def startup():
 @app.after_serving
 async def shutdown():
     app.scheduler.shutdown()
-    await app.httpx.aclose()
+
+    await app.clients.shutdown()
