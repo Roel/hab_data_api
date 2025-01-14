@@ -14,7 +14,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: 'Login to GitHub Container Registry'
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{github.actor}}
+        password: ${{secrets.GITHUB_TOKEN}}
+
     - name: Build the Docker image
-      run: docker build -f docker/hab_data_api/Dockerfile . --tag hab_data_api:latest
+      run: docker build -f docker/hab_data_api/Dockerfile . --tag ghcr.io/${{github.actor}}/hab_data_api:latest
+
     - name: Push the Docker image
-      run: docker push hab_data_api:latest
+      run: docker push ghcr.io/${{github.actor}}/hab_data_api:latest
