@@ -1,0 +1,12 @@
+services:
+  hab_data_api:
+    image: hab_data_api:latest
+    build:
+      context: ..
+      dockerfile: docker/hab_data_api/Dockerfile
+    volumes:
+      - ../hab_data_api.sqlite:/app/data/hab_data_api.sqlite
+    env_file:
+      - ../environment.local.env
+    ports:
+      - 8002:8080

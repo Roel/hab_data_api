@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import datetime
-from quart import Blueprint, request, current_app as app
+from quart import Blueprint, current_app as app
 from quart_auth import basic_auth_required
 
 api = Blueprint('api', __name__)

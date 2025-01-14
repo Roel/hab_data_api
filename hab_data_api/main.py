@@ -33,6 +33,7 @@ from services.influx import InfluxService
 from services.belpex import BelpexService
 from services.price import PriceService
 
+from blueprints.status import status
 from blueprints.api import api
 from blueprints.grafana import grafana
 
@@ -112,6 +113,7 @@ async def startup():
     app.clients = Clients(app)
     app.services = Services(app)
 
+    app.register_blueprint(status, url_prefix='/status')
     app.register_blueprint(api, url_prefix='/api')
     app.register_blueprint(grafana, url_prefix='/grafana')
 
