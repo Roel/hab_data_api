@@ -19,11 +19,11 @@ jobs:
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
-        username: ${{github.actor}}
+        username: roel
         password: ${{secrets.GITHUB_TOKEN}}
 
     - name: Build the Docker image
-      run: docker build -f docker/hab_data_api/Dockerfile . --tag ghcr.io/${{github.actor}}/hab_data_api:latest
+      run: docker build -f docker/hab_data_api/Dockerfile . --tag ghcr.io/roel/hab_data_api:latest
 
     - name: Push the Docker image
-      run: docker push ghcr.io/${{github.actor}}/hab_data_api:latest
+      run: docker push ghcr.io/roel/hab_data_api:latest
