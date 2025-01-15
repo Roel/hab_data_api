@@ -23,7 +23,6 @@ from quart_auth import QuartAuth
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import Config
-from db.base import Database
 
 from clients.influx import InfluxClient
 from clients.griddata import GridDataClient
@@ -96,15 +95,12 @@ app = Quart(__name__)
 app.config.from_object(Config)
 app.secret_key = app.config['SECRET_KEY']
 
-app.db = Database(app)
 app.auth = QuartAuth(app)
 app.log = Logger(app)
 
 
 @app.before_serving
 async def startup():
-    await app.db.migrate()
-
     loop = asyncio.get_event_loop()
 
     app.scheduler = AsyncIOScheduler(event_loop=loop)

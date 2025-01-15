@@ -4,8 +4,6 @@ services:
     build:
       context: ..
       dockerfile: docker/hab_data_api/Dockerfile
-    volumes:
-      - ../hab_data_api.sqlite:/app/data/hab_data_api.sqlite
     env_file:
       - ../environment.local.env
     ports:
