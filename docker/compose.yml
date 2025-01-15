@@ -5,6 +5,15 @@ services:
       context: ..
       dockerfile: docker/hab_data_api/Dockerfile
     env_file:
-      - ../environment.local.env
+      - ../environment.docker.env
+    secrets:
+      - api_admin_pass
+      - influx_password
     ports:
       - 8002:8080
+
+secrets:
+  api_admin_pass:
+    file: ./secrets/API_ADMIN_PASS
+  influx_password:
+    file: ./secrets/INFLUX_PASSWORD

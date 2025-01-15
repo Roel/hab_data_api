@@ -2,8 +2,8 @@ __pycache__
 
 .venv
 
-environment.env
-environment.local.env
+environment*.env
+docker/secrets*
 
 hab_data_api.local.sh
 
