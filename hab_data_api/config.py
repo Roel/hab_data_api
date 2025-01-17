@@ -35,5 +35,3 @@ class Config:
     INFLUX_DATABASE = os.environ.get('INFLUX_DATABASE')
     INFLUX_USERNAME = os.environ.get('INFLUX_USERNAME')
     INFLUX_PASSWORD = read_secret('INFLUX_PASSWORD')
-
-    DATABASE_PATH = os.environ.get('SQLITE_DB_PATH')

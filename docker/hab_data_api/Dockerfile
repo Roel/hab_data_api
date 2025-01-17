@@ -1,21 +1,20 @@
 FROM python:3.12-slim AS base
 
-#Prevents Python from writing pyc files
-ENV PYTHONDONTWRITEBYTECODE=1 
+# Prevents Python from writing pyc files
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # Keeps Python from buffering stdout and stderr to avoid crashes without any logs
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Create a non-privileged user, see https://docs.docker.com/go/dockerfile-user-best-practices/
+# Create a non-privileged user
 ARG UID=10001
 RUN adduser \
     --disabled-password \
     --gecos "" \
     --home "/appuser" \
     --shell "/sbin/nologin" \
-    # --no-create-home \
     --uid "${UID}" \
     appuser
 
@@ -45,5 +44,5 @@ USER appuser
 
 HEALTHCHECK CMD curl --fail http://localhost:8080/status/health || exit 1
 
-# #add cronjobs, start it, run server
+# Run server
 CMD hypercorn --bind 0.0.0.0:8080 hab_data_api/main.py:app

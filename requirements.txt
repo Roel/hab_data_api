@@ -6,8 +6,6 @@
 #
 aiofiles==24.1.0
     # via quart
-aiosqlite==0.20.0
-    # via -r requirements.in
 anyio==4.8.0
     # via httpx
 apscheduler==3.11.0
@@ -110,7 +108,6 @@ tomli==2.2.1
     # via hypercorn
 typing-extensions==4.12.2
     # via
-    #   aiosqlite
     #   anyio
     #   hypercorn
     #   taskgroup
