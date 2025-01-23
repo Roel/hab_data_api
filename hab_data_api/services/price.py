@@ -18,7 +18,6 @@ import pandas as pd
 
 import calendar
 import datetime
-from dateutil.relativedelta import relativedelta
 
 
 class PriceService:
@@ -33,7 +32,7 @@ class PriceService:
     def get_aggregated_price(self, start_date, end_date, freq):
         date_range = [start_date, end_date]
         year_ends = [i.to_pydatetime().date() + datetime.timedelta(days=1) for i in pd.date_range(
-            start_date, end_date, freq='A')]  # YE
+            start_date, end_date, freq='YE')]
         year_ends *= 2
         date_range.extend(year_ends)
         date_range = sorted(date_range)
