@@ -132,22 +132,27 @@ class InfluxService:
 
         rs_daily_yield = self.client.query(
             f"""
-                SELECT max(value) as production
+                SELECT time, value as production
                 FROM daily_yield_energy
                 WHERE
                     time >= '{start_date.isoformat()}'
                     AND time < '{end_date.isoformat()}'
+                ORDER BY time DESC
+                LIMIT 1
             """
         )
 
         result_daily_yield = list(rs_daily_yield.get_points())
         result = 0
+        timestamp = datetime.datetime.combine(date, datetime.time(
+            0, 0, 0)).astimezone(pytz.timezone('Europe/Brussels'))
         if len(result_daily_yield) > 0:
             result = result_daily_yield[-1]['production']
+            timestamp = to_brussels_time(
+                datetime.datetime.strptime(result_daily_yield[-1]['time'], '%Y-%m-%dT%H:%M:%SZ'))
 
         return TimeDataDto(
-            timestamp=datetime.datetime.combine(date, datetime.time(
-                0, 0, 0)).astimezone(pytz.timezone('Europe/Brussels')),
+            timestamp=timestamp,
             value=result,
             unit='kWh'
         )
