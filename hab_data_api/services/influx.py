@@ -122,6 +122,36 @@ class InfluxService:
             unit='W'
         )
 
+    @cache_for(seconds=5)
+    def get_daily_production(self, date=None):
+        if date is None:
+            date = datetime.date.today()
+
+        start_date = date
+        end_date = start_date + relativedelta(days=1)
+
+        rs_daily_yield = self.client.query(
+            f"""
+                SELECT max(value) as production
+                FROM daily_yield_energy
+                WHERE
+                    time >= '{start_date.isoformat()}'
+                    AND time < '{end_date.isoformat()}'
+            """
+        )
+
+        result_daily_yield = list(rs_daily_yield.get_points())
+        result = 0
+        if len(result_daily_yield) > 0:
+            result = result_daily_yield[-1]['production']
+
+        return TimeDataDto(
+            timestamp=datetime.datetime.combine(date, datetime.time(
+                0, 0, 0)).astimezone(pytz.timezone('Europe/Brussels')),
+            value=result,
+            unit='kWh'
+        )
+
     def get_current_consumption(self):
         current_production = self.get_current_production()
         current_power_net = self.get_current_power_net()

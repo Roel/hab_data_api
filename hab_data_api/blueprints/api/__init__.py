@@ -14,10 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from quart import Blueprint, current_app as app
+import datetime
+from quart import Blueprint, request, current_app as app
 from quart_auth import basic_auth_required
 
 api = Blueprint('api', __name__)
+
+TYPEFN_DATE = datetime.date.fromisoformat
 
 
 @api.get("/power/fromgrid/current")
@@ -54,6 +57,26 @@ async def get_current_production():
         'value': result.value,
         'unit': result.unit
     }
+
+
+@api.get("/production/daily")
+@basic_auth_required()
+async def get_daily_production():
+    errors = []
+
+    date = request.args.get(
+        'date', default=datetime.date.today(), type=TYPEFN_DATE)
+    if date is None:
+        errors.append('Failed to parse value for parameter: date.')
+
+    if len(errors) == 0:
+        result = app.services.influx.get_daily_production(date=date)
+        return {'timestamp': result.timestamp.isoformat(),
+                'value': result.value,
+                'unit': result.unit}
+    else:
+        return {'status': 'error',
+                'errors': errors}, 400
 
 
 @api.get("/consumption/current")
