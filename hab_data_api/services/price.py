@@ -245,7 +245,7 @@ class PriceCalculationWaseWind2025(AbstractDynamicPriceCalculation):
 
     def get_distribution_price_per_kWh(self):
         distributie = 0.0561
-        certificaten = 0.0167
+        certificaten = 0.0157
         accijnzen = 0.0523
 
         return distributie + certificaten + accijnzen
