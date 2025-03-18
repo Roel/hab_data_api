@@ -241,7 +241,7 @@ class PriceCalculationWaseWind2025(AbstractDynamicPriceCalculation):
         return 65
 
     def get_distribution_price_per_kW_peak(self):
-        return 49.0426291 * 1.06
+        return 51.99
 
     def get_distribution_price_per_kWh(self):
         distributie_per_kWh = 0.0236764
@@ -258,7 +258,7 @@ class PriceCalculationWaseWind2025(AbstractDynamicPriceCalculation):
             + certificaten
 
     def get_distribution_price_fixed(self):
-        databeheer = 17.51 * 1.06
+        databeheer = 18.52
         return databeheer / 12.0
 
     def get_eneryfund_price(self):
