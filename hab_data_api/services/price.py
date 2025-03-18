@@ -244,18 +244,11 @@ class PriceCalculationWaseWind2025(AbstractDynamicPriceCalculation):
         return 51.99
 
     def get_distribution_price_per_kWh(self):
-        distributie_per_kWh = 0.0236764
-        openbaredienst_verplichtingen = 0.0277220
-        toeslagen = 0.0014996
-        overige_transmissienetkosten = 0  # 0.0043571
-        certificaten = 0.01567
+        distributie = 0.0561
+        certificaten = 0.0167
+        accijnzen = 0.0523
 
-        accijnzen = 0.04748
-
-        return (
-            (distributie_per_kWh + openbaredienst_verplichtingen + toeslagen +
-             overige_transmissienetkosten + accijnzen) * 1.06) \
-            + certificaten
+        return distributie + certificaten + accijnzen
 
     def get_distribution_price_fixed(self):
         databeheer = 18.52
