@@ -135,7 +135,7 @@ class AbstractPriceCalculation:
         return self.get_aggregated_price(start_date, end_date, '1D')
 
     def get_hourly_price(self, start_date, end_date):
-        return self.get_aggregated_price(start_date, end_date, '1H')
+        return self.get_aggregated_price(start_date, end_date, '1h')
 
     def calculate_price(self, df_row):
         timestamp = df_row.name
