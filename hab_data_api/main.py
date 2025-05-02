@@ -48,7 +48,7 @@ class Clients:
             username=self.app.config['INFLUX_USERNAME'],
             password=self.app.config['INFLUX_PASSWORD'])
 
-        if self.app.config['GIDDATA_CLIENT'] == 'entsoe':
+        if self.app.config['GRIDDATA_CLIENT'] == 'entsoe':
             self.griddata = GridDataClientEntsoe(self.app)
         else:
             self.griddata = GridDataClientElia(self.app)
