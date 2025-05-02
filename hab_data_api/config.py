@@ -35,3 +35,5 @@ class Config:
     INFLUX_DATABASE = os.environ.get('INFLUX_DATABASE')
     INFLUX_USERNAME = os.environ.get('INFLUX_USERNAME')
     INFLUX_PASSWORD = read_secret('INFLUX_PASSWORD')
+
+    GRIDDATA_CLIENT = os.environ.get('GRIDDATA_CLIENT')

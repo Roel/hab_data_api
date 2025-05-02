@@ -25,7 +25,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import Config
 
 from clients.influx import InfluxClient
-from clients.griddata import GridDataClient
+from clients.griddata import GridDataClientEntsoe, GridDataClientElia
 
 from services.cache import CacheService
 from services.influx import InfluxService
@@ -48,7 +48,10 @@ class Clients:
             username=self.app.config['INFLUX_USERNAME'],
             password=self.app.config['INFLUX_PASSWORD'])
 
-        self.griddata = GridDataClient(self.app)
+        if self.app.config['GIDDATA_CLIENT'] == 'entsoe':
+            self.griddata = GridDataClientEntsoe(self.app)
+        else:
+            self.griddata = GridDataClientElia(self.app)
 
     async def shutdown(self):
         await asyncio.gather(
