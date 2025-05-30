@@ -628,3 +628,38 @@ class InfluxService:
             })
 
         self.client.write_points(data, retention_policy="persist")
+
+    @cache_for(seconds=300)
+    def get_house_temperature(self, start, end):
+        rs_temp = self.client.query(
+            f"""
+                select value as temp
+                from ecodan2_house_temp
+                where time >= '{start.astimezone(pytz.utc).isoformat()}'
+                and time < '{end.astimezone(pytz.utc).isoformat()}'
+                tz('Europe/Brussels')
+            """
+        )
+
+        result = []
+        for r in rs_temp.get_points():
+            r['time'] = to_brussels_time(
+                datetime.datetime.strptime(r['time'], '%Y-%m-%dT%H:%M:%SZ'))
+            result.append(r)
+
+        if len(result) > 0:
+            df = pd.DataFrame(result)
+            df = df.set_index('time')
+        else:
+            df = None
+
+        if df is not None:
+            return TimePeriodStatsDto(
+                start=df.index.min().astimezone(pytz.timezone('Europe/Brussels')),
+                end=df.index.max().astimezone(pytz.timezone('Europe/Brussels')),
+                unit='° C',
+                q25=df.temp.quantile(0.25),
+                q50=df.temp.quantile(0.5),
+                q75=df.temp.quantile(0.75),
+                stddev=df.temp.std()
+            )

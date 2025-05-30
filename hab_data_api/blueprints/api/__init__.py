@@ -21,6 +21,7 @@ from quart_auth import basic_auth_required
 api = Blueprint('api', __name__)
 
 TYPEFN_DATE = datetime.date.fromisoformat
+TYPEFN_DATETIME = datetime.datetime.fromisoformat
 
 
 @api.get("/power/fromgrid/current")
@@ -151,4 +152,25 @@ async def get_heatpump_setpoint():
     return {
         'dhw': result.dhw,
         'heating': result.heating
+    }
+
+
+@api.get("/house/temp")
+@basic_auth_required()
+async def get_house_temperature():
+    end = request.args.get(
+        'end', default=datetime.datetime.now(), type=TYPEFN_DATETIME)
+    start = request.args.get(
+        'start', default=(end - datetime.timedelta(days=1)), type=TYPEFN_DATETIME)
+
+    result = app.services.influx.get_house_temperature(start, end)
+
+    return {
+        'start': result.start.isoformat(),
+        'end': result.end.isoformat(),
+        'unit': result.unit,
+        'q25': result.q25,
+        'q50': result.q50,
+        'q75': result.q75,
+        'stddev': result.stddev
     }
