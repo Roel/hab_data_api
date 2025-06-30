@@ -14,7 +14,7 @@ blinker==1.9.0
     # via
     #   flask
     #   quart
-certifi==2025.4.26
+certifi==2025.6.15
     # via
     #   httpcore
     #   httpx
@@ -72,11 +72,11 @@ markupsafe==3.0.2
     #   jinja2
     #   quart
     #   werkzeug
-msgpack==1.1.0
+msgpack==1.1.1
     # via influxdb
 numpy==2.2.6
     # via pandas
-pandas==2.2.3
+pandas==2.3.0
     # via -r requirements.in
 priority==2.0.0
     # via hypercorn
@@ -95,7 +95,7 @@ quart==0.20.0
     #   quart-auth
 quart-auth==0.11.0
     # via -r requirements.in
-requests==2.32.3
+requests==2.32.4
     # via influxdb
 six==1.17.0
     # via
@@ -107,7 +107,7 @@ taskgroup==0.2.2
     # via hypercorn
 tomli==2.2.1
     # via hypercorn
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   anyio
     #   exceptiongroup
@@ -117,7 +117,7 @@ tzdata==2025.2
     # via pandas
 tzlocal==5.3.1
     # via apscheduler
-urllib3==2.4.0
+urllib3==2.5.0
     # via requests
 werkzeug==3.1.3
     # via
