@@ -5,6 +5,4 @@ __pycache__
 environment*.env
 docker/secrets*
 
-hab_data_api.local.sh
-
-hab_data_api.sqlite
+*.local.sh
