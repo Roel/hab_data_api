@@ -4,24 +4,24 @@
 #
 #    pip-compile --cert=None --client-cert=None --index-url=None --pip-args=None requirements.in
 #
-aiofiles==24.1.0
+aiofiles==25.1.0
     # via quart
-anyio==4.10.0
+anyio==4.12.0
     # via httpx
-apscheduler==3.11.0
+apscheduler==3.11.1
     # via -r requirements.in
 blinker==1.9.0
     # via
     #   flask
     #   quart
-certifi==2025.8.3
+certifi==2025.11.12
     # via
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
-click==8.3.0
+click==8.3.1
     # via
     #   flask
     #   quart
@@ -40,13 +40,13 @@ httpcore==1.0.9
     # via httpx
 httpx==0.28.1
     # via -r requirements.in
-hypercorn==0.17.3
+hypercorn==0.18.0
     # via
     #   -r requirements.in
     #   quart
 hyperframe==6.1.0
     # via h2
-idna==3.10
+idna==3.11
     # via
     #   anyio
     #   httpx
@@ -61,17 +61,17 @@ jinja2==3.1.6
     # via
     #   flask
     #   quart
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via
     #   flask
     #   jinja2
     #   quart
     #   werkzeug
-msgpack==1.1.1
+msgpack==1.1.2
     # via influxdb
-numpy==2.3.3
+numpy==2.3.5
     # via pandas
-pandas==2.3.2
+pandas==2.3.3
     # via -r requirements.in
 priority==2.0.0
     # via hypercorn
@@ -96,17 +96,15 @@ six==1.17.0
     # via
     #   influxdb
     #   python-dateutil
-sniffio==1.3.1
-    # via anyio
 tzdata==2025.2
     # via pandas
 tzlocal==5.3.1
     # via apscheduler
-urllib3==2.5.0
+urllib3==2.6.0
     # via requests
-werkzeug==3.1.3
+werkzeug==3.1.4
     # via
     #   flask
     #   quart
-wsproto==1.2.0
+wsproto==1.3.2
     # via hypercorn
