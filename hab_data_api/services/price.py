@@ -26,7 +26,8 @@ class PriceService:
 
         self.price_calculation = {
             2024: PriceCalculationWaseWind2024(self.app),
-            2025: PriceCalculationWaseWind2025(self.app)
+            2025: PriceCalculationWaseWind2025(self.app),
+            2026: PriceCalculationWaseWind2026(self.app)
         }
 
     def get_aggregated_price(self, start_date, end_date, freq):
@@ -252,6 +253,42 @@ class PriceCalculationWaseWind2025(AbstractDynamicPriceCalculation):
 
     def get_distribution_price_fixed(self):
         databeheer = 18.52
+        return databeheer / 12.0
+
+    def get_eneryfund_price(self):
+        return 0
+
+
+class PriceCalculationWaseWind2026(AbstractDynamicPriceCalculation):
+    def get_consumption_rate1_price(self, timestamp):
+        return (0.138 * 0.5 * self.get_monthly_belpex(timestamp) * 10 + 7.72) / 100
+
+    def get_consumption_rate2_price(self, timestamp):
+        return self.get_consumption_rate1_price(timestamp)
+
+    def get_injection_rate1_price(self, timestamp):
+        return 0.02 / 100
+
+    def get_injection_rate2_price(self, timestamp):
+        return self.get_injection_rate1_price(timestamp)
+
+    def get_subscription_price(self):
+        return 65
+
+    def get_distribution_price_per_kW_peak(self):
+        return 50.1239818 * 1.06
+
+    def get_distribution_price_per_kWh(self):
+        distributie = 0.0248638 * 1.06
+        openbare_dienst = 0.0236385 * 1.06
+        toeslagen = 0.0013038 * 1.06
+        certificaten = (1.13 + 0.33) / 100
+        accijnzen = 0.0503288 + 0.0020417
+
+        return distributie + openbare_dienst + toeslagen + certificaten + accijnzen
+
+    def get_distribution_price_fixed(self):
+        databeheer = 18.921
         return databeheer / 12.0
 
     def get_eneryfund_price(self):
