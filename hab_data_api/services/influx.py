@@ -17,6 +17,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 
+import math
 import pandas as pd
 
 import pytz
@@ -28,7 +29,6 @@ from services.cache import cache_for
 def to_brussels_time(datetime_utc):
     return datetime_utc.replace(tzinfo=pytz.utc).astimezone(
         pytz.timezone('Europe/Brussels'))
-
 
 
 class InfluxService:
@@ -531,6 +531,27 @@ class InfluxService:
             return None
         else:
             return results[0]['belpex']
+
+    @cache_for(seconds=14400)
+    def get_belpex(self, timestamp):
+        timestamp.minutes = math.floor(timestamp.minutes / 15) * 15
+
+        rs_belpex = self.client.query(
+            f"""
+                select value as belpex from
+                "persist".belpex_grid_prices
+                where time = '{timestamp.astimezone(pytz.utc).isoformat()}'
+                """
+        )
+
+        results = []
+        for r in rs_belpex.get_points():
+            results.append(r)
+
+        if len(results) == 0:
+            return None
+        else:
+            return results[0]["belpex"]
 
     @cache_for(seconds=300)
     def get_hourly_energy_consumption_injection(self, start_date, end_date):

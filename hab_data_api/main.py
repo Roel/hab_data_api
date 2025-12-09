@@ -30,7 +30,7 @@ from clients.griddata import GridDataClientEntsoe, GridDataClientElia
 from services.cache import CacheService
 from services.influx import InfluxService
 from services.belpex import BelpexService
-from services.price import PriceService
+from services.price import PriceService, AlternativePriceService
 
 from blueprints.status import status
 from blueprints.api import api
@@ -67,7 +67,7 @@ class Services:
         self.influx = InfluxService(self.app)
         self.belpex = BelpexService(self.app)
         self.price = PriceService(self.app)
-
+        self.alternative_price = AlternativePriceService(self.app)
 
 class Logger:
     def __init__(self, app):

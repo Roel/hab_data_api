@@ -51,18 +51,38 @@ async def get_metrics():
     return [
         {"label": "Heatpump status", "value": "heatpump_status"},
         {"label": "Baseline consumption", "value": "baseline_consumption"},
-        {"label": "Electricity price last 10 days (daily)",
-         "value": "price_daily"},
+        {"label": "Electricity price last 10 days (daily)", "value": "price_daily"},
         {"label": "Electricity price (hourly)", "value": "price_hourly"},
         {"label": "Electricity price this month", "value": "price_this_month"},
         {"label": "Electricity invoice peak this month", "value": "invoice_peak"},
         {"label": "Electricity peak this month", "value": "current_month_peak"},
-        {"label": "Electricity price detail this month",
-            "value": "price_detail_this_month"},
-        {"label": "Electricity price detail previous month",
-            "value": "price_detail_previous_month"},
+        {
+            "label": "Electricity price detail this month",
+            "value": "price_detail_this_month",
+        },
+        {
+            "label": "Electricity price detail previous month",
+            "value": "price_detail_previous_month",
+        },
         {"label": "Belpex this month", "value": "belpex_this_month"},
         {"label": "Belpex previous month", "value": "belpex_previous_month"},
+        {
+            "label": "Alternative electricity price last 10 days (daily)",
+            "value": "price2_daily",
+        },
+        {"label": "Alternative electricity price (hourly)", "value": "price2_hourly"},
+        {
+            "label": "Alternative electricity price this month",
+            "value": "price2_this_month",
+        },
+        {
+            "label": "Alternative electricity price detail this month",
+            "value": "price2_detail_this_month",
+        },
+        {
+            "label": "Alternative electricity price detail previous month",
+            "value": "price2_detail_previous_month",
+        },
     ]
 
 
@@ -264,6 +284,72 @@ async def query():
                 'target': 'belpex_previous_month',
                 'datapoints': datapoints
             })
+        elif t == "price2_hourly":
+            start_date = date_from.date()
+            end_date = date_to.date() + datetime.timedelta(days=1)
 
+            df = app.services.alternative_price.get_hourly_price(start_date, end_date)
+
+            datapoints = [
+                [i.total, int(i.Index.strftime("%s")) * 1000] for i in df.itertuples()
+            ]
+
+            result.append({"target": "price2_hourly", "datapoints": datapoints})
+        elif t == "price2_daily":
+            start_date = date_to.date() - datetime.timedelta(days=10)
+            end_date = date_to.date() + datetime.timedelta(days=1)
+
+            df = app.services.alternative_price.get_daily_price(start_date, end_date)
+
+            datapoints = [
+                [i.total, int(i.Index.strftime("%s")) * 1000] for i in df.itertuples()
+            ]
+
+            result.append({"target": "price2_daily", "datapoints": datapoints})
+        elif t == "price2_this_month":
+            start_date = datetime.date(date_to.year, date_to.month, 1)
+            end_date = start_date + relativedelta(months=1)
+
+            df = app.services.alternative_price.get_monthly_price(start_date, end_date)
+
+            datapoints = [
+                [i.total, int(i.Index.strftime("%s")) * 1000] for i in df.itertuples()
+            ]
+
+            result.append({"target": "price2_this_month", "datapoints": datapoints})
+        elif t == "price2_detail_this_month":
+            start_date = datetime.date(date_to.year, date_to.month, 1)
+            end_date = start_date + relativedelta(months=1)
+
+            df = app.services.alternative_price.get_monthly_price(start_date, end_date)
+            details = list(df)
+
+            for i in details:
+                result.append(
+                    {
+                        "target": i,
+                        "datapoints": [
+                            [df.iloc[0][i], int(start_date.strftime("%s")) * 1000]
+                        ],
+                    }
+                )
+        elif t == "price2_detail_previous_month":
+            start_date = datetime.date(date_to.year, date_to.month, 1) - relativedelta(
+                months=1
+            )
+            end_date = datetime.date(date_to.year, date_to.month, 1)
+
+            df = app.services.alternative_price.get_monthly_price(start_date, end_date)
+            details = list(df)
+
+            for i in details:
+                result.append(
+                    {
+                        "target": i,
+                        "datapoints": [
+                            [df.iloc[0][i], int(start_date.strftime("%s")) * 1000]
+                        ],
+                    }
+                )
 
     return result
