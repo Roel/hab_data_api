@@ -280,7 +280,7 @@ class PriceCalculationWaseWind2026(AbstractDynamicPriceCalculation):
         return self.get_consumption_rate1_price(timestamp)
 
     def get_injection_rate1_price(self, timestamp):
-        return 0.02 / 100
+        return 0.02 * 10 / 100
 
     def get_injection_rate2_price(self, timestamp):
         return self.get_injection_rate1_price(timestamp)
