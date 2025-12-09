@@ -534,7 +534,7 @@ class InfluxService:
 
     @cache_for(seconds=14400)
     def get_belpex(self, timestamp):
-        timestamp.minutes = math.floor(timestamp.minutes / 15) * 15
+        timestamp.minute = math.floor(timestamp.minute / 15) * 15
 
         rs_belpex = self.client.query(
             f"""
