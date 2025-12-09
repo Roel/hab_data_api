@@ -76,8 +76,8 @@ class AlternativePriceService(PriceService):
         super().__init__(app)
 
         self.price_calculation = {
-            2025: PriceCalculationWaseWind2026(self.app),
-            2026: PriceCalculationWaseWind2026(self.app),
+            2025: PriceCalculationWaseWindDynamic2026(self.app),
+            2026: PriceCalculationWaseWindDynamic2026(self.app),
         }
 
 
