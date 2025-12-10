@@ -76,7 +76,7 @@ class AlternativePriceService(PriceService):
         super().__init__(app)
 
         self.price_calculation = {
-            2025: PriceCalculationWaseWindDynamic2026(self.app),
+            2025: PriceCalculationWaseWind2026(self.app),
             2026: PriceCalculationWaseWindDynamic2026(self.app),
         }
 
@@ -316,7 +316,7 @@ class PriceCalculationWaseWindDynamic2026(AbstractDynamicPriceCalculation):
         return self.get_consumption_rate1_price(timestamp)
 
     def get_injection_rate1_price(self, timestamp):
-        return 0.02 / 100
+        return 0.02
 
     def get_injection_rate2_price(self, timestamp):
         return self.get_injection_rate1_price(timestamp)
