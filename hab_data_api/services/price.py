@@ -90,8 +90,14 @@ class AbstractPriceCalculation:
         return self.app.services.influx.get_invoice_peak(year, month)
 
     def get_hourly_energy_consumption_injection(self, start_date, end_date):
-        """Get the montly energy consumption and injection between given start date and end date."""
+        """Get the hourly energy consumption and injection between given start date and end date."""
         return self.app.services.influx.get_hourly_energy_consumption_injection(start_date, end_date)
+
+    def get_15minutely_energy_consumption_injection(self, start_date, end_date):
+        """Get the 15-minutely energy consumption and injection between given start date and end date."""
+        return self.app.services.influx.get_15minutely_energy_consumption_injection(
+            start_date, end_date
+        )
 
     def get_consumption_rate1_price(self, timestamp):
         """Get the price per kWh for rate1 (high) consumption for the given timestamp."""
@@ -130,8 +136,9 @@ class AbstractPriceCalculation:
         raise NotImplementedError
 
     def get_aggregated_price(self, start_date, end_date, freq):
-        energy_stats = self.get_hourly_energy_consumption_injection(
-            start_date, end_date)
+        energy_stats = self.get_15minutely_energy_consumption_injection(
+            start_date, end_date
+        )
 
         if energy_stats is not None:
             energy_stats = energy_stats.apply(
@@ -151,19 +158,22 @@ class AbstractPriceCalculation:
     def calculate_price(self, df_row):
         timestamp = df_row.name
 
-        hours_in_year = 365 * 24
+        quarter_hours_in_year = 365 * 24 * 4
         if calendar.isleap(timestamp.year):
-            hours_in_year += 24
+            quarter_hours_in_year += 24 * 4
 
         days_in_month = calendar.monthrange(timestamp.year, timestamp.month)[1]
-        hours_in_month = days_in_month * 24
+        quarter_hours_in_month = days_in_month * 24 * 4
 
-        fixed_component = self.get_subscription_price() / hours_in_year
-        fixed_component += self.get_eneryfund_price() / hours_in_year
-        fixed_component += self.get_distribution_price_fixed() / hours_in_month
+        fixed_component = self.get_subscription_price() / quarter_hours_in_year
+        fixed_component += self.get_eneryfund_price() / quarter_hours_in_year
+        fixed_component += self.get_distribution_price_fixed() / quarter_hours_in_month
 
-        distrib_peak_component = self.get_distribution_price_per_kW_peak(
-        ) * self.get_invoice_peak(timestamp.year, timestamp.month) / hours_in_year
+        distrib_peak_component = (
+            self.get_distribution_price_per_kW_peak()
+            * self.get_invoice_peak(timestamp.year, timestamp.month)
+            / quarter_hours_in_year
+        )
 
         distrib_dynamic_component = self.get_distribution_price_per_kWh() * (
             df_row.consumption_rate1 + df_row.consumption_rate2

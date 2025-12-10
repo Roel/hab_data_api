@@ -554,14 +554,16 @@ class InfluxService:
             return results[0]["belpex"]
 
     @cache_for(seconds=300)
-    def get_hourly_energy_consumption_injection(self, start_date, end_date):
+    def get_aggregated_energy_consumption_injection(
+        self, interval, start_date, end_date
+    ):
         rs_consumption = self.client.query(
             f"""
                 select difference(last(value)) as consumption
                 from persist.p1_elec_total_fromgrid
                 where time >= '{start_date.strftime('%Y-%m-%d')}'
                 and time < '{end_date.strftime('%Y-%m-%d')}'
-                group by rate, time(1h)
+                group by rate, time({interval})
                 tz('Europe/Brussels')
             """
         )
@@ -602,7 +604,7 @@ class InfluxService:
                 from persist.p1_elec_total_togrid
                 where time >= '{start_date.strftime('%Y-%m-%d')}'
                 and time < '{end_date.strftime('%Y-%m-%d')}'
-                group by rate, time(1h)
+                group by rate, time({interval})
                 tz('Europe/Brussels')
             """
         )
@@ -630,6 +632,16 @@ class InfluxService:
             df = pd.merge(df, df_temp, left_index=True, right_index=True)
 
         return df
+
+    def get_hourly_energy_consumption_injection(self, start_date, end_date):
+        return self.get_aggregated_energy_consumption_injection(
+            "1h", start_date, end_date
+        )
+
+    def get_15minutely_energy_consumption_injection(self, start_date, end_date):
+        return self.get_aggregated_energy_consumption_injection(
+            "15m", start_date, end_date
+        )
 
     def save_grid_prices(self, grid_data):
         data = []
