@@ -131,6 +131,16 @@ async def get_current_dhw_temp():
         'unit': result.unit
     }
 
+@api.get("/outside/temp")
+@basic_auth_required()
+async def get_current_outside_temp():
+    result = app.services.influx.get_current_outside_temp()
+
+    return {
+        'timestamp': result.timestamp.isoformat(),
+        'value': result.value,
+        'unit': result.unit
+    }
 
 @api.get("/heatpump/status")
 @basic_auth_required()

@@ -453,6 +453,34 @@ class InfluxService:
             unit='° C'
         )
 
+    @cache_for(seconds=5)
+    def get_current_outside_temp(self):
+        start = datetime.datetime.now().astimezone(pytz.utc) - datetime.timedelta(
+            minutes=2
+        )
+
+        rs_outside_temp = self.client.query(
+            f"select * from ecodan2_outdoor_temp where time >= '{start.isoformat()}'order by time desc limit 1"
+        )
+
+        results = []
+        for r in rs_outside_temp.get_points():
+            r["time"] = to_brussels_time(
+                datetime.datetime.strptime(r["time"], "%Y-%m-%dT%H:%M:%SZ")
+            )
+            results.append(r)
+
+        results = sorted(results, key=lambda x: x["time"])
+
+        if len(results) == 0:
+            timestamp = None
+            outside_temp = None
+        else:
+            timestamp = results[-1]["time"]
+            outside_temp = results[-1]["value"]
+
+        return TimeDataDto(timestamp=timestamp, value=outside_temp, unit="° C")
+
     @cache_for(seconds=14400)
     def get_current_month_peak(self):
         today = datetime.date.today()
