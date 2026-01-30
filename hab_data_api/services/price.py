@@ -26,14 +26,14 @@ class PriceService:
 
         self.price_calculation = {
             2024: {
-                (datetime.date(2024, 1, 1), datetime.date(2024, 12, 31)): PriceCalculationWaseWind2024(self.app),
+                (datetime.date(2024, 1, 1), datetime.date(2025, 1, 1)): PriceCalculationWaseWind2024(self.app),
             },
             2025: {
-                (datetime.date(2025, 1, 1), datetime.date(2025, 12, 31)): PriceCalculationWaseWind2025(self.app)
+                (datetime.date(2025, 1, 1), datetime.date(2026, 1, 1)): PriceCalculationWaseWind2025(self.app)
             },
             2026: {
-                (datetime.date(2026, 1, 1), datetime.date(2026, 1, 31)): PriceCalculationWaseWind2026(self.app),
-                (datetime.date(2026, 2, 1), datetime.date(2026, 12, 31)): PriceCalculationWaseWindDynamic2026(self.app)
+                (datetime.date(2026, 1, 1), datetime.date(2026, 2, 1)): PriceCalculationWaseWind2026(self.app),
+                (datetime.date(2026, 2, 1), datetime.date(2027, 1, 1)): PriceCalculationWaseWindDynamic2026(self.app)
             }
         }
 
@@ -104,11 +104,11 @@ class AlternativePriceService(PriceService):
 
         self.price_calculation = {
             2025: {
-                (datetime.date(2025, 1, 1), datetime.date(2025, 12, 31)): PriceCalculationWaseWind2026(self.app)
+                (datetime.date(2025, 1, 1), datetime.date(2026, 1, 1)): PriceCalculationWaseWind2026(self.app)
             },
             2026: {
-                (datetime.date(2026, 1, 1), datetime.date(2026, 1, 31)): PriceCalculationWaseWindDynamic2026(self.app),
-                (datetime.date(2026, 2, 1), datetime.date(2026, 12, 31)): PriceCalculationWaseWind2026(self.app)
+                (datetime.date(2026, 1, 1), datetime.date(2026, 2, 1)): PriceCalculationWaseWindDynamic2026(self.app),
+                (datetime.date(2026, 2, 1), datetime.date(2027, 1, 1)): PriceCalculationWaseWind2026(self.app)
             }
         }
 
