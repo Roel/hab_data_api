@@ -75,7 +75,7 @@ class PriceService:
                 )
 
                 if price is not None and not price.empty:
-                    result = pd.concat([result, price], ignore_index=True)
+                    result = pd.concat([result, price])
 
         # Check if any prices were calculated
         if result.empty:
