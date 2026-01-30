@@ -25,39 +25,61 @@ class PriceService:
         self.app = app
 
         self.price_calculation = {
-            2024: PriceCalculationWaseWind2024(self.app),
-            2025: PriceCalculationWaseWind2025(self.app),
-            2026: PriceCalculationWaseWind2026(self.app)
+            2024: {
+                (datetime.date(2024, 1, 1), datetime.date(2024, 12, 31)): PriceCalculationWaseWind2024(self.app),
+            },
+            2025: {
+                (datetime.date(2025, 1, 1), datetime.date(2025, 12, 31)): PriceCalculationWaseWind2025(self.app)
+            },
+            2026: {
+                (datetime.date(2026, 1, 1), datetime.date(2026, 1, 31)): PriceCalculationWaseWind2026(self.app),
+                (datetime.date(2026, 2, 1), datetime.date(2026, 12, 31)): PriceCalculationWaseWindDynamic2026(self.app)
+            }
         }
 
     def get_aggregated_price(self, start_date, end_date, freq):
-        date_range = [start_date, end_date]
-        year_ends = [i.to_pydatetime().date() + datetime.timedelta(days=1) for i in pd.date_range(
-            start_date, end_date, freq='YE')]
-        year_ends *= 2
-        date_range.extend(year_ends)
-        date_range = sorted(date_range)
+        """
+        Get aggregated prices with support for multiple calculations per year.
+        """
+        # Ensure dates are datetime objects
+        start_date = pd.to_datetime(start_date).date()
+        end_date = pd.to_datetime(end_date).date()
 
         result = pd.DataFrame()
 
-        for i in range(int(len(date_range) / 2)):
-            start_date = date_range[i*2]
-            end_date = date_range[(i*2)+1]
+        # Collect unique years in the date range
+        years_to_calculate = sorted(set(range(start_date.year, end_date.year + 1)))
 
-            if start_date == end_date:
-                continue
+        for year in years_to_calculate:
+            # Check if the year has any calculations defined
+            year_calculations = self.price_calculation.get(year, {})
 
-            calculation = self.price_calculation.get(start_date.year, None)
+            if not year_calculations:
+                raise ValueError(f'No price calculations exist for the year {year}')
 
-            if calculation is None:
-                raise ValueError(
-                    f'No price calculation exists for the year {start_date.year}')
+            # Find calculations that overlap with the requested date range
+            for (calc_start, calc_end), calculation in year_calculations.items():
+                # Calculate the intersection of date ranges
+                intersection_start = max(start_date, calc_start)
+                intersection_end = min(end_date, calc_end)
 
-            price = calculation.get_aggregated_price(
-                start_date, end_date, freq)
+                # Skip if no overlap
+                if intersection_start > intersection_end:
+                    continue
 
-            if price is not None:
-                result = pd.concat([result, price])
+                # Get the aggregated price for the overlapping period
+                price = calculation.get_aggregated_price(
+                    intersection_start, 
+                    intersection_end, 
+                    freq
+                )
+
+                if price is not None and not price.empty:
+                    result = pd.concat([result, price], ignore_index=True)
+
+        # Check if any prices were calculated
+        if result.empty:
+            return None
 
         return result
 
@@ -78,6 +100,16 @@ class AlternativePriceService(PriceService):
         self.price_calculation = {
             2025: PriceCalculationWaseWind2026(self.app),
             2026: PriceCalculationWaseWindDynamic2026(self.app),
+        }
+
+        self.price_calculation = {
+            2025: {
+                (datetime.date(2025, 1, 1), datetime.date(2025, 12, 31)): PriceCalculationWaseWind2026(self.app)
+            },
+            2026: {
+                (datetime.date(2026, 1, 1), datetime.date(2026, 1, 31)): PriceCalculationWaseWindDynamic2026(self.app),
+                (datetime.date(2026, 2, 1), datetime.date(2026, 12, 31)): PriceCalculationWaseWind2026(self.app)
+            }
         }
 
 
