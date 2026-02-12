@@ -308,12 +308,23 @@ async def query():
                 simulated_price[["score"]], left_index=True, right_index=True
             )
 
-            datapoints = [
-                [(x.belpex, x.score), int(x.Index.strftime("%s")) * 1000]
+            datapoints_belpex = [
+                [x.belpex, int(x.Index.strftime("%s")) * 1000]
                 for x in belpex.itertuples()
             ]
 
-            result.append({"target": "belpex_today_tomorrow", "datapoints": datapoints})
+            datapoints_score = [
+                [x.score, int(x.Index.strftime("%s")) * 1000]
+                for x in belpex.itertuples()
+            ]
+
+            result.append(
+                {"target": "belpex_today_tomorrow", "datapoints": datapoints_belpex},
+                {
+                    "target": "belpex_score_today_tomorrow",
+                    "datapoints": datapoints_score,
+                },
+            )
 
         elif t == 'belpex_this_month':
             date = datetime.date(date_to.year, date_to.month, 1)
