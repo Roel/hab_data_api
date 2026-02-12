@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import datetime
 import pandas as pd
@@ -20,7 +21,7 @@ class TimePeriodStatsDto:
     q50: float
     q75: float
     stddev: float
-    sum: float
+    sum: Optional[float] = None
 
 
 @dataclass
