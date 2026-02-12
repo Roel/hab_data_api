@@ -261,8 +261,12 @@ async def query():
                 'datapoints': datapoints
             })
         elif t == "belpex_today_tomorrow":
-            start_date = date_from.date()
-            end_date = date_to.date() + datetime.timedelta(days=2)
+            start_date = datetime.datetime.combine(
+                date_from.date(), datetime.time(0, 0, 0)
+            )
+            end_date = datetime.datetime.combine(
+                date_to.date(), datetime.time(23, 45, 0)
+            ) + datetime.timedelta(days=2)
 
             belpex = app.services.influx.get_belpex_range(start_date, end_date)
 
