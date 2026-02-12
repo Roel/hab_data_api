@@ -319,11 +319,13 @@ async def query():
             ]
 
             result.append(
-                {"target": "belpex_today_tomorrow", "datapoints": datapoints_belpex},
+                {"target": "belpex_today_tomorrow", "datapoints": datapoints_belpex}
+            )
+            result.append(
                 {
                     "target": "belpex_score_today_tomorrow",
                     "datapoints": datapoints_score,
-                },
+                }
             )
 
         elif t == 'belpex_this_month':
