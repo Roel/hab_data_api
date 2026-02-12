@@ -309,7 +309,7 @@ async def query():
             )
 
             datapoints = [
-                [x.belpex, x.score, int(x.Index.strftime("%s")) * 1000]
+                [(x.belpex, x.score), int(x.Index.strftime("%s")) * 1000]
                 for x in belpex.itertuples()
             ]
 
