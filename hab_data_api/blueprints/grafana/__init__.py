@@ -22,6 +22,8 @@ from dateutil.relativedelta import relativedelta
 from quart import Blueprint, request, current_app as app
 from quart_auth import basic_auth_required
 
+from hab_data_api.dto.generic import TimeDataDto, TimeDataInterpolatedRangeDto
+
 grafana = Blueprint('grafana', __name__)
 
 
@@ -64,6 +66,7 @@ async def get_metrics():
             "label": "Electricity price detail previous month",
             "value": "price_detail_previous_month",
         },
+        {"label": "Belpex today and tomorrow", "value": "belpex_today_tomorrow"},
         {"label": "Belpex this month", "value": "belpex_this_month"},
         {"label": "Belpex previous month", "value": "belpex_previous_month"},
         {
@@ -257,6 +260,57 @@ async def query():
                 'target': 'invoice_peak',
                 'datapoints': datapoints
             })
+        elif t == "belpex_today_tomorrow":
+            start_date = date_from.date()
+            end_date = date_to.date() + datetime.timedelta(days=2)
+
+            belpex = app.services.influx.get_belpex_range(start_date, end_date)
+
+            simulate_df = TimeDataInterpolatedRangeDto(
+                "pchip",
+                [
+                    TimeDataDto(
+                        timestamp=belpex.index.min() - datetime.timedelta(days=10),
+                        value=750,
+                        unit="W",
+                    ),
+                    TimeDataDto(
+                        timestamp=belpex.index.max(),
+                        value=750,
+                        unit="W",
+                    ),
+                ],
+            ).to_df("15min")
+
+            simulated_price = app.services.price.simulate_aggregated_price(
+                simulate_df, "15min"
+            )
+
+            price_mean = simulated_price.total.quantile(0.5)
+            price_stddev = simulated_price.total.std()
+            price_low_lt = price_mean - 1.2 * price_stddev
+            price_high_gt = price_mean + 1.2 * price_stddev
+
+            def score_price(price):
+                if price < price_low_lt:
+                    return -1
+                if price > price_high_gt:
+                    return 1
+                return 0
+
+            simulated_price["score"] = simulated_price["total"].apply(score_price)
+
+            belpex = belpex.merge(
+                simulated_price[["score"]], left_index=True, right_index=True
+            )
+
+            datapoints = [
+                [x.belpex, x.score, int(x.Index.strftime("%s")) * 1000]
+                for x in belpex.itertuples()
+            ]
+
+            result.append({"target": "belpex_today_tomorrow", "datapoints": datapoints})
+
         elif t == 'belpex_this_month':
             date = datetime.date(date_to.year, date_to.month, 1)
             belpex = app.services.influx.get_monthly_belpex(

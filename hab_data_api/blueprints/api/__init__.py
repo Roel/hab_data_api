@@ -15,8 +15,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import datetime
+import math
 from quart import Blueprint, request, current_app as app
 from quart_auth import basic_auth_required
+
+from dto.generic import TimeDataInterpolatedRangeDto, TimeDataDto
 
 api = Blueprint('api', __name__)
 
@@ -184,3 +187,87 @@ async def get_house_temperature():
         'q75': result.q75,
         'stddev': result.stddev
     }
+
+
+@api.post("/price/simulate/total")
+@basic_auth_required()
+async def simulate_price():
+    data = await request.json
+
+    interpolation_method = data.get("interpolation_method", None) or "pchip"
+    timedata = []
+
+    for t in data.get("data", []):
+        timestamp = t.get("timestamp", None)
+        if timestamp is None:
+            continue
+        else:
+            timestamp = TYPEFN_DATETIME(timestamp)
+
+        timedata.append(
+            TimeDataDto(
+                timestamp=timestamp.replace(
+                    minute=math.floor(timestamp.minute / 15) * 15
+                ),
+                value=t.get("net_power"),
+                unit="W",
+            )
+        )
+
+    dto = TimeDataInterpolatedRangeDto(interpolation_method, timedata)
+    input_df = dto.to_df("15min")
+
+    try:
+        result = app.services.price.simulate_aggregated_price_total(input_df)
+
+        return {
+            "start": result.start.isoformat(),
+            "end": result.end.isoformat(),
+            "unit": result.unit,
+            "q25": result.q25,
+            "q50": result.q50,
+            "q75": result.q75,
+            "stddev": result.stddev,
+            "sum": result.sum,
+        }
+    except RuntimeError as e:
+        return {"error": e.args[0]}, 400
+
+
+@api.post("/price/simulate/total/detail")
+@basic_auth_required()
+async def simulate_price_detail():
+    data = await request.json
+
+    interpolation_method = data.get("interpolation_method", None) or "pchip"
+    timedata = []
+
+    for t in data.get("data", []):
+        timestamp = t.get("timestamp", None)
+        if timestamp is None:
+            continue
+        else:
+            timestamp = TYPEFN_DATETIME(timestamp)
+
+        timedata.append(
+            TimeDataDto(
+                timestamp=timestamp.replace(
+                    minute=math.floor(timestamp.minute / 15) * 15
+                ),
+                value=t.get("net_power"),
+                unit="W",
+            )
+        )
+
+    dto = TimeDataInterpolatedRangeDto(interpolation_method, timedata)
+    input_df = dto.to_df("15min")
+
+    try:
+        result = app.services.price.simulate_aggregated_price_total_detail(input_df)
+
+        return [
+            {"timestamp": x.timestamp.isoformat(), "value": x.value, "unit": x.unit}
+            for x in result
+        ]
+    except RuntimeError as e:
+        return {"error": e.args[0]}, 400

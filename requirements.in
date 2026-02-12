@@ -6,3 +6,4 @@ influxdb
 httpx
 pandas
 python-dateutil
+scipy

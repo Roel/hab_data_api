@@ -582,6 +582,34 @@ class InfluxService:
             return results[0]["belpex"]
 
     @cache_for(seconds=300)
+    def get_belpex_range(self, start, end):
+        start = start.replace(minute=math.floor(start.minute / 15) * 15)
+        end = end.replace(minute=math.floor(end.minute / 15) * 15)
+
+        rs_belpex = self.client.query(
+            f"""
+                select time, value as belpex from
+                "persist".belpex_grid_prices
+                where time >= '{start.astimezone(pytz.utc).isoformat()}'
+                and time <= '{end.astimezone(pytz.utc).isoformat()}'
+                """
+        )
+
+        results = []
+        for r in rs_belpex.get_points():
+            r["time"] = to_brussels_time(
+                datetime.datetime.strptime(r["time"], "%Y-%m-%dT%H:%M:%SZ")
+            )
+            results.append(r)
+
+        if len(results) == 0:
+            return None
+        else:
+            df = pd.DataFrame(columns=("time", "belpex"), data=results)
+            df = df.set_index("time")
+            return df
+
+    @cache_for(seconds=300)
     def get_aggregated_energy_consumption_injection(
         self, interval, start_date, end_date
     ):

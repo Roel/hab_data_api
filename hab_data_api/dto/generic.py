@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import datetime
+import pandas as pd
 
 
 @dataclass
@@ -19,3 +20,16 @@ class TimePeriodStatsDto:
     q50: float
     q75: float
     stddev: float
+    sum: float
+
+
+@dataclass
+class TimeDataInterpolatedRangeDto:
+    interpolation_method: str
+    data: list
+
+    def to_df(self, freq):
+        df = pd.DataFrame(columns=("timestamp", "value", "unit"), data=self.data)
+        df = df.set_index("timestamp")
+        df = df.resample(freq).interpolate(self.interpolation_method).ffill()
+        return df

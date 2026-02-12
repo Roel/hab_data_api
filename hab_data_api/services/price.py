@@ -19,6 +19,69 @@ import pandas as pd
 import calendar
 import datetime
 
+import pytz
+
+from dto.generic import TimeDataDto, TimePeriodStatsDto
+
+_PD_TIMEFORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+class PriceUtil:
+    @staticmethod
+    def convert_interpolatedRangeDf_to_consumptionDf(interpolatedRangeDf):
+
+        def is_rate1(timestamp):
+            if timestamp.weekday() in (5, 6):
+                return False
+            return timestamp.hour >= 6 and timestamp.hour < 21
+
+        def convert_to_consumption(df_row):
+            if df_row.unit not in ("kW", "W"):
+                raise RuntimeError("Unit not supported")
+
+            timestamp = df_row.name.to_pydatetime()
+            timestamp_is_rate1 = is_rate1(timestamp)
+
+            consumption_rate1 = 0
+            consumption_rate2 = 0
+            injection_rate1 = 0
+            injection_rate2 = 0
+
+            if df_row.unit == "W":
+                df_row.value /= 1000
+
+            if df_row.value < 0:
+                if timestamp_is_rate1:
+                    injection_rate1 = df_row.value
+                else:
+                    injection_rate2 = df_row.value
+            else:
+                if timestamp_is_rate1:
+                    consumption_rate1 = df_row.value
+                else:
+                    consumption_rate2 = df_row.value
+
+            return pd.Series(
+                [
+                    consumption_rate1,
+                    consumption_rate2,
+                    injection_rate1,
+                    injection_rate2,
+                ],
+                index=[
+                    "consumption_rate1",
+                    "consumption_rate2",
+                    "injection_rate1",
+                    "injection_rate2",
+                ],
+            )
+
+        df = interpolatedRangeDf.apply(
+            convert_to_consumption, axis=1, result_type="expand"
+        )
+
+        return df
+
 
 class PriceService:
     def __init__(self, app):
@@ -104,6 +167,87 @@ class PriceService:
     def get_hourly_price(self, start_date, end_date):
         return self.get_aggregated_price(start_date, end_date, '1h')
 
+    def get_15minutely_price(self, start_date, end_date):
+        return self.get_aggregated_price(start_date, end_date, "15min")
+
+    def simulate_aggregated_price(self, df, freq):
+        result = pd.DataFrame()
+
+        start_date = df.index.min().astimezone(pytz.timezone("Europe/Brussels"))
+        end_date = df.index.max().astimezone(pytz.timezone("Europe/Brussels"))
+
+        # Collect unique years in the date range
+        years_to_calculate = sorted(set(range(start_date.year, end_date.year + 1)))
+
+        for year in years_to_calculate:
+            # Check if the year has any calculations defined
+            year_calculations = self.price_calculation.get(year, {})
+
+            if not year_calculations:
+                raise ValueError(f"No price calculations exist for the year {year}")
+
+            # Find calculations that overlap with the requested date range
+            for (calc_start, calc_end), calculation in year_calculations.items():
+                # Calculate the intersection of date ranges
+                intersection_start = max(
+                    start_date,
+                    datetime.datetime.combine(
+                        calc_start, datetime.time(0, 0, 0)
+                    ).astimezone(pytz.timezone("Europe/Brussels")),
+                )
+                intersection_end = min(
+                    end_date,
+                    datetime.datetime.combine(
+                        calc_end, datetime.time(0, 0, 0)
+                    ).astimezone(pytz.timezone("Europe/Brussels")),
+                )
+
+                # Skip if no overlap
+                if intersection_start > intersection_end:
+                    continue
+
+                # Get the aggregated price for the overlapping period
+                price = calculation.simulate_aggregated_price(
+                    PriceUtil.convert_interpolatedRangeDf_to_consumptionDf(
+                        df[
+                            intersection_start.strftime(
+                                _PD_TIMEFORMAT
+                            ) : intersection_end.strftime(_PD_TIMEFORMAT)
+                        ]
+                    ),
+                    freq,
+                )
+
+                if price is not None and not price.empty:
+                    result = pd.concat([result, price])
+
+        # Check if any prices were calculated
+        if result.empty:
+            return None
+
+        return result
+
+    def simulate_aggregated_price_total(self, df):
+        result = self.simulate_aggregated_price(df, "15min")
+
+        if result is not None:
+            return TimePeriodStatsDto(
+                start=result.index.min().astimezone(pytz.timezone("Europe/Brussels")),
+                end=result.index.max().astimezone(pytz.timezone("Europe/Brussels")),
+                unit="€",
+                q25=result.total.quantile(0.25),
+                q50=result.total.quantile(0.5),
+                q75=result.total.quantile(0.75),
+                stddev=result.total.std(),
+                sum=result.total.sum(),
+            )
+
+    def simulate_aggregated_price_total_detail(self, df):
+        result = self.simulate_aggregated_price(df, "15min")
+
+        if result is not None:
+            return [TimeDataDto(x.Index, x.total, "€") for x in result.itertuples()]
+
 
 class AlternativePriceService(PriceService):
     def __init__(self, app):
@@ -135,6 +279,11 @@ class AbstractPriceCalculation:
 
     def get_invoice_peak(self, year, month):
         """Get the invoice peak for the given year and month."""
+        now = datetime.datetime.now(tz=pytz.timezone("Europe/Brussels"))
+
+        if datetime.date(year, month, 1) > now.date():
+            return self.app.services.influx.get_invoice_peak(now.year, now.month)
+
         return self.app.services.influx.get_invoice_peak(year, month)
 
     def get_hourly_energy_consumption_injection(self, start_date, end_date):
@@ -203,6 +352,17 @@ class AbstractPriceCalculation:
     def get_hourly_price(self, start_date, end_date):
         return self.get_aggregated_price(start_date, end_date, '1h')
 
+    def get_15minutely_price(self, start_date, end_date):
+        return self.get_aggregated_price(start_date, end_date, "15min")
+
+    def simulate_aggregated_price(self, df, freq):
+        if len(df) == 0 or df is None:
+            return
+
+        df = df.apply(self.calculate_price, axis=1, result_type="expand")
+
+        return df.groupby(pd.Grouper(freq=freq)).agg("sum")
+
     def calculate_price(self, df_row):
         timestamp = df_row.name
 
@@ -252,7 +412,12 @@ class AbstractDynamicPriceCalculation(AbstractPriceCalculation):
         return self.app.services.influx.get_monthly_belpex(timestamp.year, timestamp.month)
 
     def get_belpex(self, timestamp):
-        return self.app.services.influx.get_belpex(timestamp)
+        belpex = self.app.services.influx.get_belpex(timestamp)
+
+        if belpex is None:
+            raise RuntimeError(f"Belpex is unknown for timestamp {timestamp}")
+
+        return belpex
 
 
 class PriceCalculationWaseWind2024(AbstractDynamicPriceCalculation):
