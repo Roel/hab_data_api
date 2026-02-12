@@ -22,7 +22,7 @@ from dateutil.relativedelta import relativedelta
 from quart import Blueprint, request, current_app as app
 from quart_auth import basic_auth_required
 
-from hab_data_api.dto.generic import TimeDataDto, TimeDataInterpolatedRangeDto
+from dto.generic import TimeDataDto, TimeDataInterpolatedRangeDto
 
 grafana = Blueprint('grafana', __name__)
 
