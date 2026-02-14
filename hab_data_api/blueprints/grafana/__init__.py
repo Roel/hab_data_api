@@ -296,9 +296,9 @@ async def query():
             price_high_gt = price_mean + 1.2 * price_stddev
 
             def score_price(price):
-                if price < price_low_lt:
+                if price <= price_low_lt:
                     return -1
-                if price > price_high_gt:
+                if price >= price_high_gt:
                     return 1
                 return 0
 

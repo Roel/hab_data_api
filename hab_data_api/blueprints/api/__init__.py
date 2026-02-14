@@ -207,7 +207,7 @@ async def simulate_price():
         timedata.append(
             TimeDataDto(
                 timestamp=timestamp.replace(
-                    minute=math.floor(timestamp.minute / 15) * 15
+                    minute=math.floor(timestamp.minute / 15) * 15, second=0
                 ),
                 value=t.get("net_power"),
                 unit="W",
@@ -252,7 +252,7 @@ async def simulate_price_detail():
         timedata.append(
             TimeDataDto(
                 timestamp=timestamp.replace(
-                    minute=math.floor(timestamp.minute / 15) * 15
+                    minute=math.floor(timestamp.minute / 15) * 15, second=0
                 ),
                 value=t.get("net_power"),
                 unit="W",

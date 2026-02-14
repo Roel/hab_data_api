@@ -583,8 +583,8 @@ class InfluxService:
 
     @cache_for(seconds=300)
     def get_belpex_range(self, start, end):
-        start = start.replace(minute=math.floor(start.minute / 15) * 15)
-        end = end.replace(minute=math.floor(end.minute / 15) * 15)
+        start = start.replace(minute=math.floor(start.minute / 15) * 15, second=0)
+        end = end.replace(minute=math.floor(end.minute / 15) * 15, second=0)
 
         rs_belpex = self.client.query(
             f"""
