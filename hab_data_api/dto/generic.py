@@ -32,5 +32,9 @@ class TimeDataInterpolatedRangeDto:
     def to_df(self, freq):
         df = pd.DataFrame(columns=("timestamp", "value", "unit"), data=self.data)
         df = df.set_index("timestamp")
-        df = df.resample(freq).interpolate(self.interpolation_method).ffill()
+        df = df.resample(freq)
+
+        # Interpolate only the value, then ffill the rest
+        df["value"] = df["value"].interpolate(method=self.interpolation_method)
+        df["unit"] = df["unit"].ffill()
         return df
