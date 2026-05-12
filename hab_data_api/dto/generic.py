@@ -32,9 +32,18 @@ class TimeDataInterpolatedRangeDto:
     def to_df(self, freq):
         df = pd.DataFrame(columns=("timestamp", "value", "unit"), data=self.data)
         df = df.set_index("timestamp")
-        df = df.resample(freq)
 
-        # Interpolate only the value, then ffill the rest
-        df["value"] = df["value"].interpolate(method=self.interpolation_method)
-        df["unit"] = df["unit"].ffill()
-        return df
+        # 1. Resample and expand to the new frequency
+        # .asfreq() creates the new rows with NaN values
+        resampled = df.resample(freq).asfreq()
+
+        # 2. Interpolate the numeric 'value' column
+        resampled["value"] = resampled["value"].interpolate(
+            method=self.interpolation_method
+        )
+
+        # 3. Forward-fill the 'unit' column (strings)
+        resampled["unit"] = resampled["unit"].ffill()
+
+        # 4. Final ffill to catch any leading NaNs if necessary
+        return resampled.ffill()
