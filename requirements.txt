@@ -14,14 +14,14 @@ blinker==1.9.0
     # via
     #   flask
     #   quart
-certifi==2026.4.22
+certifi==2026.5.20
     # via
     #   httpcore
     #   httpx
     #   requests
 charset-normalizer==3.4.7
     # via requests
-click==8.3.3
+click==8.4.1
     # via
     #   flask
     #   quart
@@ -46,7 +46,7 @@ hypercorn==0.18.0
     #   quart
 hyperframe==6.1.0
     # via h2
-idna==3.14
+idna==3.18
     # via
     #   anyio
     #   httpx
@@ -69,7 +69,7 @@ markupsafe==3.0.3
     #   werkzeug
 msgpack==1.1.2
     # via influxdb
-numpy==2.4.4
+numpy==2.4.6
     # via
     #   pandas
     #   scipy
@@ -90,7 +90,7 @@ quart==0.20.0
     #   quart-auth
 quart-auth==0.11.0
     # via -r requirements.in
-requests==2.34.0
+requests==2.34.2
     # via influxdb
 scipy==1.17.1
     # via -r requirements.in
