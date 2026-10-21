@@ -1,4 +1,4 @@
-FROM python:3.14-slim@sha256:0741d101873c12ab927e6f8653feb8862b9bd58771177acb1b885b95141f91b4 AS base
+FROM python:3.14-slim@sha256:fbecd461fc72d21b2143c6eaba25143738079154a6d0ea3da3aec724f50eed4a AS base
 
 # Prevents Python from writing pyc files
 ENV PYTHONDONTWRITEBYTECODE=1
