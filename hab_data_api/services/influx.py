@@ -564,7 +564,7 @@ class InfluxService:
     def get_belpex(self, timestamp):
         timestamp = timestamp.replace(minute=math.floor(timestamp.minute / 15) * 15)
 
-        def get_belpex_real(self, timestamp):
+        def get_belpex_real(timestamp):
             rs_belpex = self.client.query(f"""
                     select value as belpex from
                     "persist".belpex_grid_prices
