@@ -564,22 +564,29 @@ class InfluxService:
     def get_belpex(self, timestamp):
         timestamp = timestamp.replace(minute=math.floor(timestamp.minute / 15) * 15)
 
-        rs_belpex = self.client.query(
-            f"""
-                select value as belpex from
-                "persist".belpex_grid_prices
-                where time = '{timestamp.astimezone(pytz.utc).isoformat()}'
-                """
-        )
+        def get_belpex_real(self, timestamp):
+            rs_belpex = self.client.query(f"""
+                    select value as belpex from
+                    "persist".belpex_grid_prices
+                    where time = '{timestamp.astimezone(pytz.utc).isoformat()}'
+                    """)
 
-        results = []
-        for r in rs_belpex.get_points():
-            results.append(r)
+            results = []
+            for r in rs_belpex.get_points():
+                results.append(r)
 
-        if len(results) == 0:
-            return None
-        else:
-            return results[0]["belpex"]
+            if len(results) == 0:
+                return None
+            else:
+                return results[0]["belpex"]
+
+        belpex = get_belpex_real(timestamp)
+
+        # CEST -> CET lacks price for extra hour
+        if belpex is None:
+            belpex = get_belpex_real(timestamp + datetime.timedelta(hours=1))
+
+        return belpex
 
     @cache_for(seconds=300)
     def get_belpex_range(self, start, end):
