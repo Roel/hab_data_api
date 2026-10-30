@@ -519,7 +519,7 @@ class PriceCalculationWaseWind2026(AbstractDynamicPriceCalculation):
         openbare_dienst = 0.0236385 * 1.06
         toeslagen = 0.0013038 * 1.06
         certificaten = (1.13 + 0.33) / 100
-        accijnzen = 0.0503288 + 0.0020417
+        accijnzen = 0.04876
 
         return distributie + openbare_dienst + toeslagen + certificaten + accijnzen
 
@@ -555,7 +555,7 @@ class PriceCalculationWaseWindFixedDynamic2026(AbstractDynamicPriceCalculation):
         openbare_dienst = 0.0236385 * 1.06
         toeslagen = 0.0013038 * 1.06
         certificaten = (1.13 + 0.33) / 100
-        accijnzen = 0.0503288 + 0.0020417
+        accijnzen = 0.04876
 
         return distributie + openbare_dienst + toeslagen + certificaten + accijnzen
 
@@ -591,7 +591,7 @@ class PriceCalculationWaseWindFullDynamic2026(AbstractDynamicPriceCalculation):
         openbare_dienst = 0.0236385 * 1.06
         toeslagen = 0.0013038 * 1.06
         certificaten = (1.13 + 0.33) / 100
-        accijnzen = 0.0503288 + 0.0020417
+        accijnzen = 0.04876
 
         return distributie + openbare_dienst + toeslagen + certificaten + accijnzen
 
